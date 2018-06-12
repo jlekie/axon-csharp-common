@@ -7,11 +7,9 @@ namespace Axon
 {
     public interface IEndpoint
     {
-        
     }
 
     public abstract class AEndpoint : IEndpoint
     {
-        
     }
 }
