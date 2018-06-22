@@ -27,11 +27,11 @@ namespace Axon
         public byte[] Data { get; private set; }
         public Dictionary<string, byte[]> Metadata { get; private set; }
 
-        public DataReceivedEventArgs(byte[] data, Dictionary<string, byte[]> metadata)
+        public DataReceivedEventArgs(byte[] data, IDictionary<string, byte[]> metadata)
             : base()
         {
             this.Data = data;
-            this.Metadata = metadata;
+            this.Metadata = new Dictionary<string, byte[]>(metadata);
         }
     }
     public class DataSentEventArgs : EventArgs
@@ -39,11 +39,11 @@ namespace Axon
         public byte[] Data { get; private set; }
         public Dictionary<string, byte[]> Metadata { get; private set; }
 
-        public DataSentEventArgs(byte[] data, Dictionary<string, byte[]> metadata)
+        public DataSentEventArgs(byte[] data, IDictionary<string, byte[]> metadata)
             : base()
         {
             this.Data = data;
-            this.Metadata = metadata;
+            this.Metadata = new Dictionary<string, byte[]>(metadata);
         }
     }
 
@@ -52,8 +52,10 @@ namespace Axon
         event EventHandler<DataReceivedEventArgs> DataReceived;
         event EventHandler<DataSentEventArgs> DataSent;
 
-        Task Send(byte[] data, Dictionary<string, byte[]> metadata);
+        Task Send(byte[] data, IDictionary<string, byte[]> metadata);
         Task<ReceivedData> Receive();
+
+        Task<Func<Task<ReceivedData>>> SendAndReceive(byte[] data, IDictionary<string, byte[]> metadata);
     }
 
     public interface IServerTransport : ITransport {
@@ -62,6 +64,7 @@ namespace Axon
 
     public interface IClientTransport : ITransport {
         Task Connect(IEndpoint endpoint);
+        Task Close();
     }
 
     public abstract class ATransport : ITransport
@@ -69,15 +72,16 @@ namespace Axon
         public event EventHandler<DataReceivedEventArgs> DataReceived;
         public event EventHandler<DataSentEventArgs> DataSent;
 
-        public abstract Task Send(byte[] data, Dictionary<string, byte[]> metadata);
+        public abstract Task Send(byte[] data, IDictionary<string, byte[]> metadata);
         public abstract Task<ReceivedData> Receive();
+        public abstract Task<Func<Task<ReceivedData>>> SendAndReceive(byte[] data, IDictionary<string, byte[]> metadata);
 
-        protected virtual void OnDataReceived(byte[] data, Dictionary<string, byte[]> metadata)
+        protected virtual void OnDataReceived(byte[] data, IDictionary<string, byte[]> metadata)
         {
             if (this.DataReceived != null)
                 this.DataReceived(this, new DataReceivedEventArgs(data, metadata));
         }
-        protected virtual void OnDataSent(byte[] data, Dictionary<string, byte[]> metadata)
+        protected virtual void OnDataSent(byte[] data, IDictionary<string, byte[]> metadata)
         {
             if (this.DataSent != null)
                 this.DataSent(this, new DataSentEventArgs(data, metadata));
@@ -91,5 +95,6 @@ namespace Axon
     public abstract class AClientTransport : ATransport, IClientTransport
     {
         public abstract Task Connect(IEndpoint endpoint);
+        public abstract Task Close();
     }
 }

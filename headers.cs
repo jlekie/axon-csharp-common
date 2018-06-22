@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -9,11 +10,19 @@ namespace Axon
     {
         public readonly string ActionName;
         public readonly int ArgumentCount;
+        public readonly ReadOnlyDictionary<string, string> Tags;
         
         public RequestHeader(string actionName, int argumentCount)
         {
             this.ActionName = actionName;
             this.ArgumentCount = argumentCount;
+            this.Tags = new ReadOnlyDictionary<string, string>(new Dictionary<string, string>());
+        }
+        public RequestHeader(string actionName, int argumentCount, IDictionary<string, string> tags)
+        {
+            this.ActionName = actionName;
+            this.ArgumentCount = argumentCount;
+            this.Tags = new ReadOnlyDictionary<string, string>(tags);
         }
     }
 

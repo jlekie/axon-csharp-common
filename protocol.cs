@@ -1,18 +1,29 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Axon
 {
     public interface IProtocol
     {
-        Task WriteData(Action<IProtocolWriter> handler);
-        Task<TResult> ReadData<TResult>(Func<IProtocolReader, TResult> handler);
+        Task WriteData(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
+
+        Task ReadData(ITransport transport, Action<IProtocolReader, IDictionary<string, byte[]>> handler);
+        Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, IDictionary<string, byte[]>, TResult> handler);
+
+        Task<Func<Action<IProtocolReader, IDictionary<string, byte[]>>, Task>> WriteAndReadData(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
+        Task<Func<Func<IProtocolReader, IDictionary<string, byte[]>, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
     }
 
     public abstract class AProtocol : IProtocol
     {
-        public abstract Task WriteData(Action<IProtocolWriter> handler);
-        public abstract Task<TResult> ReadData<TResult>(Func<IProtocolReader, TResult> handler);
+        public abstract Task WriteData(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
+
+        public abstract Task ReadData(ITransport transport, Action<IProtocolReader, IDictionary<string, byte[]>> handler);
+        public abstract Task<TResult> ReadData<TResult>(ITransport transport, Func<IProtocolReader, IDictionary<string, byte[]>, TResult> handler);
+
+        public abstract Task<Func<Action<IProtocolReader, IDictionary<string, byte[]>>, Task>> WriteAndReadData(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
+        public abstract Task<Func<Func<IProtocolReader, IDictionary<string, byte[]>, TResult>, Task<TResult>>> WriteAndReadData<TResult>(ITransport transport, IDictionary<string, byte[]> metadata, Action<IProtocolWriter> handler);
     }
 
     public interface IProtocolReader
@@ -29,7 +40,7 @@ namespace Axon
         float ReadFloatValue();
         double ReadDoubleValue();
         T ReadEnumValue<T>() where T : struct, IConvertible;
-        object ReadIndefinateValue();
+        object ReadIndeterminateValue();
 
         RequestHeader ReadRequestHeader();
         RequestArgumentHeader ReadRequestArgumentHeader();
@@ -75,7 +86,7 @@ namespace Axon
         public abstract float ReadFloatValue();
         public abstract double ReadDoubleValue();
         public abstract T ReadEnumValue<T>() where T : struct, IConvertible;
-        public abstract object ReadIndefinateValue();
+        public abstract object ReadIndeterminateValue();
 
         public RequestHeader ReadRequestHeader()
         {
@@ -130,6 +141,8 @@ namespace Axon
         ITransport Transport { get; }
         IProtocol Protocol { get; }
 
+        // Task WriteData(Action<IProtocolWriter> handler);
+
         void WriteStringValue(string value);
         void WriteBooleanValue(bool value);
         void WriteByteValue(byte value);
@@ -139,6 +152,7 @@ namespace Axon
         void WriteFloatValue(float value);
         void WriteDoubleValue(double value);
         void WriteEnumValue<T>(T value) where T : struct, IConvertible;
+        void WriteIndeterminateValue(object value);
 
         void WriteRequestHeader(RequestHeader header);
         void WriteRequestArgumentHeader(RequestArgumentHeader header);
@@ -175,6 +189,8 @@ namespace Axon
             this.protocol = protocol;
         }
 
+        // public abstract Task WriteData(Action<IProtocolWriter> handler);
+
         public abstract void WriteStringValue(string value);
         public abstract void WriteBooleanValue(bool value);
         public abstract void WriteByteValue(byte value);
@@ -184,6 +200,7 @@ namespace Axon
         public abstract void WriteFloatValue(float value);
         public abstract void WriteDoubleValue(double value);
         public abstract void WriteEnumValue<T>(T value) where T : struct, IConvertible;
+        public abstract void WriteIndeterminateValue(object value);
 
         public void WriteRequestHeader(RequestHeader header)
         {
