@@ -58,12 +58,15 @@ namespace Axon
         Task<Func<Task<ReceivedData>>> SendAndReceive(byte[] data, IDictionary<string, byte[]> metadata);
     }
 
-    public interface IServerTransport : ITransport {
-        Task Listen(IEndpoint endpoint);
+    public interface IServerTransport : ITransport
+    {
+        Task Listen();
+        Task Close();
     }
 
-    public interface IClientTransport : ITransport {
-        Task Connect(IEndpoint endpoint);
+    public interface IClientTransport : ITransport
+    {
+        Task Connect(int timeout = 0);
         Task Close();
     }
 
@@ -90,11 +93,12 @@ namespace Axon
 
     public abstract class AServerTransport : ATransport, IServerTransport
     {
-        public abstract Task Listen(IEndpoint endpoint);
+        public abstract Task Listen();
+        public abstract Task Close();
     }
     public abstract class AClientTransport : ATransport, IClientTransport
     {
-        public abstract Task Connect(IEndpoint endpoint);
+        public abstract Task Connect(int timeout = 0);
         public abstract Task Close();
     }
 }

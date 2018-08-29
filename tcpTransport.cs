@@ -27,6 +27,7 @@ namespace Axon
         private readonly ConcurrentQueue<Message> ReceiveBuffer;
         private readonly ConcurrentDictionary<string, ConcurrentQueue<Message>> SendBuffer;
 
+        private bool IsRunning;
         private Task ListeningTask;
 
         public TcpServerTransport()
@@ -35,12 +36,19 @@ namespace Axon
             this.SendBuffer = new ConcurrentDictionary<string, ConcurrentQueue<Message>>();
         }
 
-        public override Task Listen(IEndpoint endpoint)
+        public override Task Listen()
         {
+            this.IsRunning = true;
             // this.ListeningTask = this.ServerHandler();
             this.ListeningTask = Task.Run(() => this.ServerHandler());
 
-            return Task.CompletedTask;
+            return Task.FromResult(true);
+        }
+        public override async Task Close()
+        {
+            this.IsRunning = false;
+
+            await this.ListeningTask;
         }
 
         public override Task Send(byte[] data, IDictionary<string, byte[]> metadata)
@@ -58,7 +66,7 @@ namespace Axon
             var message = new Message(frames);
             this.SendBuffer[identity].Enqueue(message);
 
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
         public override async Task<ReceivedData> Receive()
         {
@@ -81,7 +89,7 @@ namespace Axon
             var server = new TcpListener(IPAddress.Loopback, 3333);
             server.Start();
 
-            while (true)
+            while (this.IsRunning)
             {
                 // Console.WriteLine("Waiting for client...");
 
@@ -131,9 +139,9 @@ namespace Axon
 
             Console.WriteLine("Client disconnected");
 
-            client.Dispose();
+            client.Close();
 
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
 
         private async Task<Message> GetBufferedData()
@@ -215,13 +223,13 @@ namespace Axon
             this.TaggedReceiveBuffer = new ConcurrentDictionary<string, Message>();
         }
 
-        public override Task Connect(IEndpoint endpoint)
+        public override Task Connect(int timeout = 0)
         {
             this.IsRunning = true;
             // this.ListeningTask = this.ServerHandler();
             this.ListeningTask = Task.Run(() => this.ServerHandler());
 
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
         public async override Task Close()
         {
@@ -242,7 +250,7 @@ namespace Axon
             var message = new Message(frames);
             this.SendBuffer.Enqueue(message);
 
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
         public override async Task<ReceivedData> Receive()
         {
